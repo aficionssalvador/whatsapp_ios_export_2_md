@@ -61,7 +61,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
   
   String resaltaNom(String cadena){
-    if (cadena == 'Non i cognoms del meu whatapp') {
+    if (cadena == 'Maria Gil') {
       return '. . . . . . . . **$cadena** ';
     } else {
       return cadena;
@@ -73,7 +73,9 @@ class _MyHomePageState extends State<MyHomePage> {
       try {
         String fileContent = File(filePath).readAsStringSync();
         U2ListStrings lsIn = U2ListStrings(fileContent, '\r\n');
-        U2ListStrings lsOut = U2ListStrings('', '\r\n');
+        U2ListStrings lsOutTmp = U2ListStrings('', '\r\n');
+        U2ListStrings lsOutD = U2ListStrings('', '\r\n');
+        U2ListStrings lsOutR = U2ListStrings('', '\r\n');
         for (int i = 1; i <= lsIn.fieldDCount();i++){
           String s = lsIn.field(i);
           bool tecr = (s.indexOf('\r') >= 0);
@@ -89,43 +91,64 @@ class _MyHomePageState extends State<MyHomePage> {
             String restOfString = parts.sublist(1).join('] ');
             bool isSin2Puntos = !this.datePatternSin2puntos.hasMatch(s);
             if (isSin2Puntos) {
-              lsOut.fieldStore('', -1);
-              lsOut.fieldStore(dateAndTime, -1);
-              lsOut.fieldStore('> ${escapeChar(restOfString)}', -1);
+              String stmp = lsOutTmp.fieldJoin();
+              if (stmp != ''){
+                lsOutR.fieldInsert(stmp, 1);
+                lsOutD.fieldStore(stmp, -1);
+                lsOutTmp.fieldStore('', 0);
+              }
+              lsOutTmp.fieldStore('', -1);
+              lsOutTmp.fieldStore(dateAndTime, -1);
+              lsOutTmp.fieldStore('> ${escapeChar(restOfString)}', -1);
             } else {
               List<String> parts2 = restOfString.split(': ');
               String name = parts2[0];
               String restOfString2 = parts2.sublist(1).join(': ');
-              lsOut.fieldStore('', -1);
-              lsOut.fieldStore('$dateAndTime ${escapeChar(resaltaNom(name))}' , -1);
+              String stmp = lsOutTmp.fieldJoin();
+              if (stmp != ''){
+                lsOutR.fieldInsert(stmp, 1);
+                lsOutD.fieldStore(stmp, -1);
+                lsOutTmp.fieldStore('', 0);
+              }
+
+              lsOutTmp.fieldStore('', -1);
+              lsOutTmp.fieldStore('$dateAndTime ${escapeChar(resaltaNom(name))}' , -1);
               if (teutf8206){
                 bool teAttached= ((restOfString2.indexOf('<attached: ')>=0)&&(restOfString2.indexOf('>')>=0));
                 if (teAttached) {
                   String reste3 = U2StringUtils.u2Field(U2StringUtils.u2Field(restOfString2, '<attached: ', 2),'>',1);
-                  lsOut.fieldStore('> ![[$reste3]]', -1);
+                  lsOutTmp.fieldStore('> ![[$reste3]]', -1);
                 } else
                 {
-                  lsOut.fieldStore('> ${escapeChar(restOfString2)}', -1);
+                  lsOutTmp.fieldStore('> ${escapeChar(restOfString2)}', -1);
                 }
               } else {
-                lsOut.fieldStore('> ${escapeChar(restOfString2)}', -1);
+                lsOutTmp.fieldStore('> ${escapeChar(restOfString2)}', -1);
               }
             }
           } else {
-            lsOut.fieldStore('> ${escapeChar(s)}', -1);
+            lsOutTmp.fieldStore('> ${escapeChar(s)}', -1);
           }
         }
-        if (lsOut.fieldDCount()>10){
-          lsOut.fieldInsert('^start', 1);
-          lsOut.fieldStore('^end', -1);
+        String stmp = lsOutTmp.fieldJoin();
+        if (stmp != ''){
+          lsOutR.fieldInsert(stmp, 1);
+          lsOutD.fieldStore(stmp, -1);
+          lsOutTmp.fieldStore('', 0);
         }
-        String outputFilePath = filePath.replaceAll('.txt', '.md');
-        print ('salida: $outputFilePath');
-        print ('len: ${lsOut.fieldJoin().length}');
-        File(outputFilePath).writeAsStringSync(lsOut.fieldJoin());
+        if (lsOutTmp.fieldDCount()>10){
+          // lsOutTmp.fieldInsert('^start', 1);
+          // lsOutTmp.fieldStore('^end', -1);
+        }
+        String outputFilePathD = filePath.replaceAll('.txt', '_D.md');
+        String outputFilePathR = filePath.replaceAll('.txt', '.md');
+        //print ('salida: $outputFilePathR');
+        //print ('len: ${lsOutTmp.fieldJoin().length}');
+        File(outputFilePathR).writeAsStringSync(lsOutR.fieldJoin());
+        //File(outputFilePathD).writeAsStringSync(lsOutD.fieldJoin());
 
         setState(() {
-          markdownContent = lsOut.fieldJoin(); // Cargar el contenido en Markdown
+          markdownContent = lsOutR.fieldJoin(); // Cargar el contenido en Markdown
           errorText = ''; // Limpiar cualquier mensaje de error anterior
         });
 
